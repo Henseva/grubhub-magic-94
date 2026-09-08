@@ -105,7 +105,7 @@ export interface Order {
   customerPhone: string;
   deliveryAddress: string;
   deliveryDate: string;
-  deliveryPeriod: 'Manhã (08h-12h)' | 'Tarde (13h-17h)' | 'Noite (17h-20h)';
+  deliveryPeriod: 'Hoje (Expressa 60-90 min)' | 'Manhã (08h-12h)' | 'Tarde (13h-17h)' | 'Noite (17h-20h)';
   notes?: string;
 }
 

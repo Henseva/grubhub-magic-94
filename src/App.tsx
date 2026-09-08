@@ -2083,7 +2083,7 @@ export const App: React.FC = () => {
                       <span style={{ fontWeight: 800, color: 'var(--green)' }}>{appliedCoupon.code}</span>
                       <span style={{ fontSize: '11px', color: 'var(--ink)', marginLeft: '6px' }}>
                         {appliedCoupon.type === 'fixed' && `(-${formatCurrency(appliedCoupon.value)})`}
-                        {appliedCoupon.type === 'percentage' && `(-${appliedCoupon.value}%)`}
+                        {appliedCoupon.type === 'percent' && `(-${appliedCoupon.value}%)`}
                         {appliedCoupon.type === 'free_shipping' && '(Frete Grátis)'}
                       </span>
                     </div>
