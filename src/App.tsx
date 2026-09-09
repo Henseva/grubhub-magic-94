@@ -58,10 +58,15 @@ import { ProductIcon } from './components/ProductIcon';
 import { ProductDetailModal } from './components/ProductDetailModal';
 import { LiveOrderTrackingModal } from './components/LiveOrderTrackingModal';
 import { ActiveOrderFloatingBanner } from './components/ActiveOrderFloatingBanner';
+import { useCatalog } from './hooks/useCatalog';
+import { saveOrderToCloud } from './lib/cloud/orders';
 
 const STANDARD_DELIVERY_FEE = 7.90;
 
 export const App: React.FC = () => {
+  // Catálogo vindo do banco (com fallback para os dados locais)
+  const { sections: catalogSections, allProducts: catalogProducts } = useCatalog();
+
   // --- Persistent States ---
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
@@ -846,7 +851,7 @@ export const App: React.FC = () => {
   // Reorder handling (no toast notification)
   const handleReorder = (order: Order) => {
     order.items.forEach((item) => {
-      const fullProd = SECTIONS.flatMap((s) => s.items).find((p) => p.id === item.id) || {
+      const fullProd = catalogSections.flatMap((s) => s.items).find((p) => p.id === item.id) || {
         id: item.id,
         name: item.name,
         price: item.price,
@@ -940,6 +945,7 @@ export const App: React.FC = () => {
     };
 
     setOrders((prev) => [newOrder, ...prev]);
+    void saveOrderToCloud(newOrder).catch(() => {});
 
     setUser({
       name: checkoutName,
@@ -979,8 +985,8 @@ export const App: React.FC = () => {
   };
 
   const featuredProducts = useMemo(() => {
-    return ALL_PRODUCTS.filter((p) => p.id === 'kit' || p.id === 'salada1' || p.id === 'salada2' || p.id === 'p:Manga Picada');
-  }, []);
+    return catalogProducts.filter((p) => p.id === 'kit' || p.id === 'salada1' || p.id === 'salada2' || p.id === 'p:Manga Picada');
+  }, [catalogProducts]);
 
   const favoriteCount = useMemo(() => {
     return Object.values(favorites).filter(Boolean).length;
@@ -1285,6 +1291,7 @@ export const App: React.FC = () => {
       {activeNav === 'cardapio' && (
         <div className="view-motion-wrapper" key="view-cardapio">
           <CardapioView
+            sections={catalogSections}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             activeChip={activeChip}
@@ -1303,6 +1310,7 @@ export const App: React.FC = () => {
       {activeNav === 'favoritos' && (
         <div className="view-motion-wrapper" key="view-favoritos">
           <FavoritosView
+            allProducts={catalogProducts}
             favorites={favorites}
             toggleFavorite={toggleFavorite}
             getItemQty={getItemQty}

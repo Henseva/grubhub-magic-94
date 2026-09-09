@@ -26,6 +26,7 @@ interface FavoritosViewProps {
   onNavigateToCardapio: () => void;
   onOpenCart: () => void;
   isDark: boolean;
+  allProducts?: Product[];
 }
 
 export const FavoritosView: React.FC<FavoritosViewProps> = ({
@@ -36,14 +37,15 @@ export const FavoritosView: React.FC<FavoritosViewProps> = ({
   openProductDetail,
   onNavigateToCardapio,
   onOpenCart,
+  allProducts = ALL_PRODUCTS,
 }) => {
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>('all');
   const [copiedLink, setCopiedLink] = useState(false);
 
   // List of favorite products
   const favoriteProducts = useMemo(() => {
-    return ALL_PRODUCTS.filter((p) => !!favorites[p.id]);
-  }, [favorites]);
+    return allProducts.filter((p) => !!favorites[p.id]);
+  }, [favorites, allProducts]);
 
   // Total value of all favorites combined
   const favoritesTotalValue = useMemo(() => {
@@ -71,10 +73,10 @@ export const FavoritosView: React.FC<FavoritosViewProps> = ({
 
   // Curated popular items for suggestions when list is empty or small
   const suggestedProducts = useMemo(() => {
-    return ALL_PRODUCTS.filter(
+    return allProducts.filter(
       (p) => !favorites[p.id] && (p.id === 'kit' || p.id === 'salada1' || p.id === 'p:Manga Picada' || p.id === 'p:Brocolis Higienizado')
     ).slice(0, 4);
-  }, [favorites]);
+  }, [favorites, allProducts]);
 
   // Add all favorites to cart
   const handleAddAllToCart = (e?: React.MouseEvent) => {
