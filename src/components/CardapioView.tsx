@@ -10,7 +10,7 @@ import {
   X
 } from 'lucide-react';
 import { SECTIONS, formatCurrency } from '../data/products';
-import { Product } from '../types';
+import { Product, Section } from '../types';
 import { ProductIcon } from './ProductIcon';
 
 interface CardapioViewProps {
@@ -24,6 +24,7 @@ interface CardapioViewProps {
   addToCart: (product: Product, delta: number, notes?: string, e?: React.MouseEvent) => void;
   openProductDetail: (product: Product) => void;
   isDark: boolean;
+  sections?: Section[];
 }
 
 type SortOption = 'default' | 'price-asc' | 'price-desc' | 'name-asc';
@@ -39,6 +40,7 @@ export const CardapioView: React.FC<CardapioViewProps> = ({
   getItemQty,
   addToCart,
   openProductDetail,
+  sections = SECTIONS,
 }) => {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>(() => {
     try {
@@ -60,17 +62,17 @@ export const CardapioView: React.FC<CardapioViewProps> = ({
   // Category counts
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    SECTIONS.forEach((sec) => {
+    sections.forEach((sec) => {
       counts[sec.id] = sec.items.length;
     });
     return counts;
-  }, []);
+  }, [sections]);
 
   // Filter sections and items
   const filteredSections = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
 
-    return SECTIONS.map((sec) => {
+    return sections.map((sec) => {
       let items = sec.items.filter((it) => {
         const matchesQuery =
           !q ||
@@ -177,9 +179,9 @@ export const CardapioView: React.FC<CardapioViewProps> = ({
             role="tab"
             aria-selected={activeChip === 'all'}
           >
-            Todos ({SECTIONS.reduce((a, s) => a + s.items.length, 0)})
+            Todos ({sections.reduce((a, s) => a + s.items.length, 0)})
           </button>
-          {SECTIONS.map((sec) => (
+          {sections.map((sec) => (
             <button
               key={sec.id}
               type="button"
