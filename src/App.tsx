@@ -60,6 +60,8 @@ import { LiveOrderTrackingModal } from './components/LiveOrderTrackingModal';
 import { ActiveOrderFloatingBanner } from './components/ActiveOrderFloatingBanner';
 import { useCatalog } from './hooks/useCatalog';
 import { saveOrderToCloud } from './lib/cloud/orders';
+import AuthModal from './components/AuthModal';
+import { supabase } from '@/integrations/supabase/client';
 
 const STANDARD_DELIVERY_FEE = 7.90;
 
@@ -107,6 +109,34 @@ export const App: React.FC = () => {
       return null;
     }
   });
+
+  // --- Supabase auth session ---
+  const [authUserId, setAuthUserId] = useState<string | null>(null);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [pendingWhatsApp, setPendingWhatsApp] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (active) setAuthUserId(data.session?.user.id ?? null);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthUserId(session?.user.id ?? null);
+      const meta = session?.user.user_metadata as Record<string, unknown> | undefined;
+      const email = session?.user.email ?? '';
+      if (session) {
+        setUser((prev) => prev ?? {
+          name: String(meta?.['full_name'] || meta?.['name'] || (email ? email.split('@')[0] : 'Cliente')),
+          email,
+          avatar: typeof meta?.['avatar_url'] === 'string' ? (meta['avatar_url'] as string) : undefined,
+        });
+      }
+    });
+    return () => {
+      active = false;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
 
   // Save persistent state changes
   useEffect(() => {
@@ -721,6 +751,7 @@ export const App: React.FC = () => {
   };
 
   const handleLogout = () => {
+    void supabase.auth.signOut();
     setUser(null);
     setIsEditingProfile(false);
     setLoginName('');
@@ -869,6 +900,11 @@ export const App: React.FC = () => {
   // Confirm order execution (strict Brazilian phone validation & authentic order payload)
   const handleConfirmOrder = (sendWhatsApp: boolean) => {
     setCheckoutError(null);
+    if (!authUserId) {
+      setPendingWhatsApp(sendWhatsApp);
+      setAuthOpen(true);
+      return;
+    }
     if (!checkoutName.trim()) {
       setCheckoutError('Por favor, informe seu nome completo.');
       return;
@@ -2959,6 +2995,24 @@ export const App: React.FC = () => {
           );
         })}
       </AnimatePresence>
+
+      <AuthModal
+        open={authOpen}
+        reason={pendingWhatsApp !== null ? 'Entre ou crie sua conta para finalizar o pedido. Seus itens continuam no carrinho.' : null}
+        onClose={() => {
+          setAuthOpen(false);
+          setPendingWhatsApp(null);
+        }}
+        onSuccess={() => {
+          setAuthOpen(false);
+          const resume = pendingWhatsApp;
+          setPendingWhatsApp(null);
+          if (resume !== null) {
+            setActiveSheet('checkout');
+            setTimeout(() => handleConfirmOrder(resume), 60);
+          }
+        }}
+      />
     </div>
   );
 };
