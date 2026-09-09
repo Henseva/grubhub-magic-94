@@ -1,7 +1,10 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import type { Order, OrderStatus } from '../../types';
 
-const STATUS_TO_DB: Record<OrderStatus, string> = {
+type DbStatus = Database['public']['Enums']['order_status'];
+
+const STATUS_TO_DB: Record<OrderStatus, DbStatus> = {
   Confirmado: 'criado',
   'Em separação': 'preparando',
   'A caminho': 'saiu_para_entrega',
@@ -30,7 +33,7 @@ export async function saveOrderToCloud(order: Order): Promise<string | null> {
     .from('orders')
     .insert({
       user_id: userId,
-      code: order.id,
+      
       status: STATUS_TO_DB[order.status] ?? 'criado',
       customer_name: order.customerName,
       customer_phone: order.customerPhone,
